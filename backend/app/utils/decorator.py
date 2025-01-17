@@ -2,7 +2,7 @@ from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from database import db
-from models import Usuario, Rol  # Asegúrate de importar tus modelos
+from models import Usuario, Rol  
 
 def roles_required(*required_roles):
     def decorator(fn):
