@@ -9,6 +9,9 @@ class Inventario(db.Model):
     fecha_ingreso = db.Column(db.Date, nullable=False)
     fecha_vencimiento = db.Column(db.Date, nullable=True)
 
+    pedidos = db.relationship("Pedido", backref="producto", cascade="all, delete-orphan", passive_deletes=True)
+
+
     def __init__(self, nombre_producto, categoria, cantidad, fecha_ingreso, fecha_vencimiento=None):
         self.nombre_producto = nombre_producto
         self.categoria = categoria
@@ -42,5 +45,9 @@ class Inventario(db.Model):
         db.session.commit()
 
     def delete(self):
+        # Verificar si hay pedidos relacionados y manejar dependencias
+        if self.pedidos:
+            for pedido in self.pedidos:
+                pedido.id_producto = None  # Establecer referencia nula en los pedidos relacionados
         db.session.delete(self)
         db.session.commit()

@@ -3,15 +3,12 @@ from database import db
 class Pedido(db.Model):
     __tablename__ = "pedidos"
     id_pedido = db.Column(db.Integer, primary_key=True)
-    id_producto = db.Column(db.Integer, db.ForeignKey("inventario.id_producto"), nullable=False)
-    id_proveedor = db.Column(db.Integer, db.ForeignKey("proveedores.id_proveedor"), nullable=False)
+    id_producto = db.Column(db.Integer, db.ForeignKey("inventario.id_producto", ondelete="SET NULL"), nullable=True)
+    id_proveedor = db.Column(db.Integer, db.ForeignKey("proveedores.id_proveedor", ondelete="SET NULL"), nullable=True)
     cantidad = db.Column(db.Integer, nullable=False)
     fecha_pedido = db.Column(db.Date, nullable=False)
     fecha_entrega = db.Column(db.Date, nullable=True)
     estado_pedido = db.Column(db.String(50), nullable=False)
-
-    producto = db.relationship("Inventario", backref="pedidos")
-    proveedor = db.relationship("Proveedor", backref="pedidos")
 
     def __init__(self, id_producto, id_proveedor, cantidad, fecha_pedido, estado_pedido, fecha_entrega=None):
         self.id_producto = id_producto

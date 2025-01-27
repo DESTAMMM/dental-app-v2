@@ -40,5 +40,9 @@ class Proveedor(db.Model):
         db.session.commit()
 
     def delete(self):
+        # Verificar si hay pedidos relacionados y manejar dependencias
+        if self.pedidos:
+            for pedido in self.pedidos:
+                pedido.id_proveedor = None  # Establecer referencia nula en los pedidos relacionados
         db.session.delete(self)
         db.session.commit()
