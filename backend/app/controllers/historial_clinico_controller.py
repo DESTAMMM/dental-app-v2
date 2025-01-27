@@ -36,15 +36,30 @@ def create_historial():
     except Exception as e:
         return jsonify({"error": f"Error al crear el historial clínico: {str(e)}"}), 400
 
+@historial_bp.route('/mi_historial', methods=['GET'])
+@roles_required('paciente')  # Solo pacientes pueden acceder
+def get_mi_historial(current_user):
+    try:
+        # Verificar que el usuario tiene una especialización como paciente
+        paciente = current_user.paciente
+        if not paciente:
+            return jsonify({"error": "No se encontró información del paciente"}), 404
+        # Obtener los historiales médicos asociados al paciente
+        historiales = HistorialClinico.query.filter_by(id_paciente=paciente.id_paciente).all()
+        if not historiales:
+            return jsonify({"message": "No se encontraron historiales médicos"}), 404
+        # Renderizar la lista de historiales médicos
+        return jsonify(render_historial_clinico_list(historiales)), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error al obtener el historial médico: {str(e)}"}), 500
+    
 @historial_bp.route('/historial/paciente', methods=['GET'])
 @roles_required('admin', 'asistant')
 def get_historiales_by_nombre_paciente():
-
     texto = request.args.get('texto')
-
     if not texto:
         return jsonify({"error": "El parámetro 'texto' es obligatorio"}), 400
-
     try:
         # Buscar usuarios cuyos nombres o apellidos coincidan con el texto
         usuarios = Usuario.get_by_nombre_o_apellido(texto)

@@ -9,6 +9,7 @@ from views.usuarios_view import render_user_list, render_user_detail
 from views.pacientes_view import render_paciente_list, render_paciente_detail
 from views.doctores_view import render_doctor_list, render_doctor_detail
 from views.asistentes_view import render_asistente_list, render_asistente_detail
+from sqlalchemy.orm import joinedload
 
 usuarios_bp = Blueprint('usuarios', __name__)
 
@@ -116,7 +117,11 @@ def get_all_users():
 @roles_required('admin')
 def get_all_pacientes():
     try:
-        pacientes = Paciente.get_all()
+        # Consulta personalizada con joinedload
+        pacientes = Paciente.query.options(
+            joinedload(Paciente.usuario).joinedload("rol")
+        ).all()
+
         if not pacientes:
             return jsonify({"message": "No se encontraron pacientes"}), 404
         # Renderizar la lista de pacientes
@@ -128,10 +133,13 @@ def get_all_pacientes():
 @roles_required('admin')
 def get_all_doctores():
     try:
-        doctores = Doctor.get_all()
+        # Consulta personalizada con joinedload para cargar relaciones necesarias
+        doctores = Doctor.query.options(
+            joinedload(Doctor.usuario).joinedload("rol")
+        ).all()
         if not doctores:
             return jsonify({"message": "No se encontraron doctores"}), 404
-        # Renderizar la lista de doctores
+        # Renderizar la lista de doctores con los datos del usuario y rol
         return jsonify(render_doctor_list(doctores)), 200
     except Exception as e:
         return jsonify({"error": f"Error al obtener los doctores: {str(e)}"}), 400
@@ -140,7 +148,10 @@ def get_all_doctores():
 @roles_required('admin')
 def get_all_asistentes():
     try:
-        asistentes = Asistente.get_all()
+        # Consulta personalizada con joinedload
+        asistentes = Asistente.query.options(
+            joinedload(Asistente.usuario).joinedload("rol")
+        ).all()
         if not asistentes:
             return jsonify({"message": "No se encontraron asistentes"}), 404
         # Renderizar la lista de asistentes
@@ -148,7 +159,30 @@ def get_all_asistentes():
     except Exception as e:
         return jsonify({"error": f"Error al obtener los asistentes: {str(e)}"}), 400
 
-# Obtener un usuario por ID
+@usuarios_bp.route('/mi_informacion', methods=['GET'])
+@roles_required('paciente', 'doctor', 'asistant')
+def get_personal_info(current_user):
+    try:
+        if current_user.rol.nombre_rol == 'paciente':
+            paciente = current_user.paciente
+            if not paciente:
+                return jsonify({"error": "No se encontró información del paciente"}), 404
+            return jsonify(render_paciente_detail(paciente)), 200
+        elif current_user.rol.nombre_rol == 'doctor':
+            doctor = current_user.doctor
+            if not doctor:
+                return jsonify({"error": "No se encontró información del doctor"}), 404
+            return jsonify(render_doctor_detail(doctor)), 200
+        elif current_user.rol.nombre_rol == 'asistant':
+            asistente = current_user.asistente
+            if not asistente:
+                return jsonify({"error": "No se encontró información del asistente"}), 404
+            return jsonify(render_asistente_detail(asistente)), 200
+        return jsonify({"error": "Rol no reconocido"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Error al obtener la información personal: {str(e)}"}), 500
+
+    
 @usuarios_bp.route('/search_user', methods=['GET'])
 @roles_required('admin', 'asistant')
 def search_user():
