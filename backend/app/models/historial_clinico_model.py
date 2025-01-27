@@ -5,11 +5,11 @@ class HistorialClinico(db.Model):
     id_historial = db.Column(db.Integer, primary_key=True)
     id_paciente = db.Column(db.Integer, db.ForeignKey("pacientes.id_paciente"), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
-    diagnostico = db.Column(db.Text, nullable=False)
-    tratamiento = db.Column(db.Text, nullable=False)
+    diagnostico = db.Column(db.String(255), nullable=False)
+    tratamiento = db.Column(db.String(255), nullable=False)
     observaciones = db.Column(db.Text, nullable=True)
-
-    paciente = db.relationship("Paciente", backref="historiales")
+    
+    paciente = db.relationship("Paciente", backref=db.backref("historiales", cascade="all, delete-orphan"))
     
     def __init__(self, id_paciente, fecha, diagnostico, tratamiento, observaciones=None):
         self.id_paciente = id_paciente
@@ -29,7 +29,19 @@ class HistorialClinico(db.Model):
     @staticmethod
     def get_by_id(id_historial):
         return HistorialClinico.query.get(id_historial)
+    
+    @staticmethod
+    def get_by_fechas(fecha_inicio, fecha_fin):
+        return HistorialClinico.query.filter(
+            HistorialClinico.fecha >= fecha_inicio,
+            HistorialClinico.fecha <= fecha_fin
+        ).all()
+    
+    @staticmethod
+    def get_by_pacientes(ids_pacientes):       
+        return HistorialClinico.query.filter(HistorialClinico.id_paciente.in_(ids_pacientes)).all()
 
+    
     def update(self, fecha=None, diagnostico=None, tratamiento=None, observaciones=None):
         if fecha is not None:
             self.fecha = fecha

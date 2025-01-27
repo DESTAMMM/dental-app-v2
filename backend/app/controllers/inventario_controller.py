@@ -30,7 +30,14 @@ def create_producto():
 @roles_required('admin', 'asistente', 'usuario')
 def get_all_productos():
     productos = Inventario.get_all()
-    productos_list = [{"id_producto": producto.id_producto, "nombre_producto": producto.nombre_producto, "categoria": producto.categoria, "cantidad": producto.cantidad, "fecha_ingreso": producto.fecha_ingreso, "fecha_vencimiento": producto.fecha_vencimiento} for producto in productos]
+    productos_list = [{"id_producto": producto.id_producto,
+                        "nombre_producto": producto.nombre_producto,
+                        "categoria": producto.categoria,
+                        "cantidad": producto.cantidad,
+                        "fecha_ingreso": producto.fecha_ingreso,
+                        "fecha_vencimiento": producto.fecha_vencimiento
+                        } 
+                        for producto in productos]
     return jsonify(productos_list), 200
 
 @inventario_bp.route('/inventario/<int:id_producto>', methods=['GET'])
@@ -92,7 +99,12 @@ def create_proveedor():
 @roles_required('admin', 'asistente', 'usuario')
 def get_all_proveedores():
     proveedores = Proveedor.get_all()
-    proveedores_list = [{"id_proveedor": proveedor.id_proveedor, "nombre": proveedor.nombre, "direccion": proveedor.direccion, "correo_electronico": proveedor.correo_electronico} for proveedor in proveedores]
+    proveedores_list = [{"id_proveedor": proveedor.id_proveedor,
+                        "nombre": proveedor.nombre,
+                        "direccion": proveedor.direccion,
+                        "correo_electronico": proveedor.correo_electronico
+                        } 
+                        for proveedor in proveedores]
     return jsonify(proveedores_list), 200
 
 @inventario_bp.route('/proveedores/<int:id_proveedor>', methods=['GET'])
@@ -256,6 +268,7 @@ def get_productos_vencimiento():
     productos_list = [ { "id_producto": producto.id_producto, 
                         "nombre_producto": producto.nombre_producto, 
                         "categoria": producto.categoria, "cantidad": producto.cantidad, 
-                        "fecha_ingreso": producto.fecha_ingreso, "fecha_vencimiento": producto.fecha_vencimiento 
+                        "fecha_ingreso": producto.fecha_ingreso,
+                        "fecha_vencimiento": producto.fecha_vencimiento 
                         } for producto in productos ] 
     return jsonify(productos_list), 200

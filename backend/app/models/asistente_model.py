@@ -1,4 +1,5 @@
 from database import db
+
 class Asistente(db.Model):
     __tablename__ = "asistentes"
 
@@ -7,6 +8,9 @@ class Asistente(db.Model):
     fecha_contratacion = db.Column(db.Date, nullable=False)
     turno = db.Column(db.String(50), nullable=False)
     area_especialidad = db.Column(db.String(255), nullable=False)
+
+    # Relación con Usuario
+    usuario = db.relationship("Usuario", backref=db.backref("asistente", uselist=False, cascade="all, delete"))
 
     def __init__(self, id_usuario, fecha_contratacion, turno, area_especialidad):
         self.id_usuario = id_usuario

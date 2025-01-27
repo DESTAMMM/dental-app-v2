@@ -8,6 +8,9 @@ class Paciente(db.Model):
     fecha_nacimiento = db.Column(db.Date, nullable=False)
     direccion = db.Column(db.String(255), nullable=False)
 
+    # Relación con Usuario
+    usuario = db.relationship("Usuario", backref=db.backref("paciente", uselist=False, cascade="all, delete"))
+
     def __init__(self, id_usuario, fecha_nacimiento, direccion):
         self.id_usuario = id_usuario
         self.fecha_nacimiento = fecha_nacimiento
@@ -24,6 +27,16 @@ class Paciente(db.Model):
     @staticmethod
     def get_by_id(id_paciente):
         return Paciente.query.get(id_paciente)
+    
+    @staticmethod
+    def get_by_id_and_nombre(id_paciente, nombre_paciente):
+        
+        from models.usuario_model import Usuario
+        return Paciente.query.join(Usuario).filter(
+            Paciente.id_paciente == id_paciente,
+            Usuario.nombre.ilike(f"%{nombre_paciente}%")
+        ).first()
+
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
