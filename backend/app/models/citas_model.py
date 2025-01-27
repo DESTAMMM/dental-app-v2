@@ -11,6 +11,9 @@ class Cita(db.Model):
     id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor'), nullable=False)
     estado = db.Column(db.String(50), nullable=False)
 
+    paciente = db.relationship("Paciente", backref=db.backref("citas", cascade="all, delete-orphan"))
+    doctor = db.relationship("Doctor", backref="citas")
+
     def __init__(self, id_paciente, id_doctor, fecha_cita, hora_cita, motivo_cita, estado):
         self.id_paciente = id_paciente
         self.id_doctor = id_doctor

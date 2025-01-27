@@ -9,6 +9,7 @@ class Factura(db.Model):
     estado_pago = db.Column(db.String(50), nullable=False)
 
     paciente = db.relationship("Paciente", backref="facturas")
+    detalles = db.relationship("DetalleFactura", backref="factura", cascade="all, delete-orphan")
 
     def __init__(self, id_paciente, fecha_factura, monto_total, estado_pago):
         self.id_paciente = id_paciente

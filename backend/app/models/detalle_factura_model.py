@@ -4,10 +4,10 @@ class DetalleFactura(db.Model):
     __tablename__ = 'detalle_factura'
 
     id_detalle = db.Column(db.Integer, primary_key=True)
-    id_factura = db.Column(db.Integer, db.ForeignKey('facturas.id_factura'), nullable=False)
+    id_factura = db.Column(db.Integer, db.ForeignKey('facturas.id_factura', ondelete="CASCADE"), nullable=False)
     descripcion_tratamiento = db.Column(db.String(255), nullable=False)
     costo = db.Column(db.Float, nullable=False)
-    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor'), nullable=False)
+    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor', ondelete="SET NULL"), nullable=False)
     fecha_tratamiento = db.Column(db.Date, nullable=False)
 
     def __init__(self, id_factura, descripcion_tratamiento, costo, id_doctor, fecha_tratamiento):
