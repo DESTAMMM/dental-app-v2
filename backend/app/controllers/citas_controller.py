@@ -156,3 +156,5 @@ def delete_cita(id_cita):
         return jsonify({"message": "Cita eliminada exitosamente"}), 200
     except Exception as e:
         return jsonify({"error": f"Error al eliminar la cita: {str(e)}"}), 400
+
+#6

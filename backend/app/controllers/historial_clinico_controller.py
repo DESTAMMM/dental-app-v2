@@ -116,3 +116,5 @@ def delete_historial(id_historial):
         return jsonify({"message": "Historial clínico eliminado exitosamente"}), 200
     except Exception as e:
         return jsonify({"error": f"Error al eliminar el historial clínico: {str(e)}"}), 400
+
+#5

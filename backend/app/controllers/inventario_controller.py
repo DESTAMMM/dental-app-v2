@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import joinedload
 
-
 inventario_bp = Blueprint('inventario', __name__)
 
 # Rutas para Inventario
@@ -162,7 +161,7 @@ def delete_proveedor(id_proveedor):
 # Rutas para Pedidos
 
 @inventario_bp.route('/pedidos', methods=['POST'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def create_pedido():
     data = request.get_json()
     try:
@@ -188,7 +187,7 @@ def create_pedido():
         return jsonify({"error": f"Error al crear el pedido: {str(e)}"}), 400
     
 @inventario_bp.route('/pedidos', methods=['GET'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def get_all_pedidos():
     try:
         pedidos = Pedido.get_all()
@@ -197,7 +196,7 @@ def get_all_pedidos():
         return jsonify({"error": f"Error al obtener los pedidos: {str(e)}"}), 400
 
 @inventario_bp.route('/pedidos/<int:id_pedido>', methods=['GET'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def get_pedido(id_pedido):
     try:
         pedido = Pedido.get_by_id(id_pedido)
@@ -208,7 +207,7 @@ def get_pedido(id_pedido):
         return jsonify({"error": f"Error al obtener el pedido: {str(e)}"}), 400
 
 @inventario_bp.route('/pedidos/<int:id_pedido>', methods=['PUT'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def update_pedido(id_pedido):
     data = request.get_json()
     pedido = Pedido.get_by_id(id_pedido)
@@ -236,7 +235,7 @@ def delete_pedido(id_pedido):
         return jsonify({"error": f"Error al eliminar el pedido: {str(e)}"}), 400
 
 @inventario_bp.route('/pedidos', methods=['GET'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def get_pedidos_por_estado():
     estado = request.args.get('estado')  # Estado como parámetro opcional
     try:
@@ -261,7 +260,7 @@ def get_pedidos_por_estado():
         return jsonify({"error": f"Error al obtener los pedidos: {str(e)}"}), 400
 
 @inventario_bp.route('/inventario/productos_vencimiento', methods=['GET'])
-@roles_required('admin', 'asistente')
+@roles_required('admin', 'asistant')
 def get_productos_vencimiento():
     try:
         # Validar parámetros de entrada

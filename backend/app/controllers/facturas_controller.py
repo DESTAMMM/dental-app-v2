@@ -219,3 +219,5 @@ def filtrar_facturas():
         return jsonify({"error": "Formato de fecha inválido. Use 'YYYY-MM-DD'"}), 400
     except Exception as e:
         return jsonify({"error": f"Error al filtrar facturas: {str(e)}"}), 400
+
+#10
