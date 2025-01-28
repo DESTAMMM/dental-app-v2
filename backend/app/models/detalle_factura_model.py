@@ -7,7 +7,7 @@ class DetalleFactura(db.Model):
     id_factura = db.Column(db.Integer, db.ForeignKey('facturas.id_factura', ondelete="CASCADE"), nullable=False)
     descripcion_tratamiento = db.Column(db.String(255), nullable=False)
     costo = db.Column(db.Float, nullable=False)
-    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor', ondelete="SET NULL"), nullable=False)
+    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor', ondelete="SET NULL"), nullable=True)
     fecha_tratamiento = db.Column(db.Date, nullable=False)
 
     def __init__(self, id_factura, descripcion_tratamiento, costo, id_doctor, fecha_tratamiento):

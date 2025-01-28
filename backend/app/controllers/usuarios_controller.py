@@ -10,6 +10,7 @@ from views.pacientes_view import render_paciente_list, render_paciente_detail
 from views.doctores_view import render_doctor_list, render_doctor_detail
 from views.asistentes_view import render_asistente_list, render_asistente_detail
 from sqlalchemy.orm import joinedload
+from flask_jwt_extended import create_access_token, get_jwt
 
 usuarios_bp = Blueprint('usuarios', __name__)
 
@@ -161,23 +162,29 @@ def get_all_asistentes():
 
 @usuarios_bp.route('/mi_informacion', methods=['GET'])
 @roles_required('paciente', 'doctor', 'asistant')
-def get_personal_info(current_user):
+def get_personal_info():
     try:
-        if current_user.rol.nombre_rol == 'paciente':
-            paciente = current_user.paciente
+        # Extraer claims del token JWT
+        claims = get_jwt()
+        rol = claims.get("rol")
+        id_especializacion = claims.get("id_especializacion")
+        # Manejo según el rol del usuario
+        if rol == 'paciente':
+            paciente = Paciente.get_by_id(id_especializacion)
             if not paciente:
                 return jsonify({"error": "No se encontró información del paciente"}), 404
             return jsonify(render_paciente_detail(paciente)), 200
-        elif current_user.rol.nombre_rol == 'doctor':
-            doctor = current_user.doctor
+        elif rol == 'doctor':
+            doctor = Doctor.get_by_id(id_especializacion)
             if not doctor:
                 return jsonify({"error": "No se encontró información del doctor"}), 404
             return jsonify(render_doctor_detail(doctor)), 200
-        elif current_user.rol.nombre_rol == 'asistant':
-            asistente = current_user.asistente
+        elif rol == 'asistant':
+            asistente = Asistente.get_by_id(id_especializacion)
             if not asistente:
                 return jsonify({"error": "No se encontró información del asistente"}), 404
             return jsonify(render_asistente_detail(asistente)), 200
+        # Rol no reconocido
         return jsonify({"error": "Rol no reconocido"}), 400
     except Exception as e:
         return jsonify({"error": f"Error al obtener la información personal: {str(e)}"}), 500
@@ -265,3 +272,35 @@ def delete_user():
         return jsonify({"message": f"Usuario '{nombre_usuario}'eliminado exitosamente"}), 200
     except Exception as e:
         return jsonify({"error": f"Error al eliminar el usuario: {str(e)}"}), 400
+
+
+@usuarios_bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    # Validar datos de entrada
+    if not data.get('nombre_usuario') or not data.get('contrasena'):
+        return jsonify({"error": "El nombre de usuario y la contraseña son obligatorios"}), 400
+    # Buscar usuario en la base de datos
+    usuario = Usuario.query.filter_by(nombre_usuario=data['nombre_usuario']).first()
+    if not usuario or not usuario.check_password(data['contrasena']):
+        return jsonify({"error": "Credenciales inválidas"}), 401
+    # Identificar el rol y la especialización
+    if usuario.paciente:
+        id_especializacion = usuario.paciente.id_paciente
+        rol = "paciente"
+    elif usuario.doctor:
+        id_especializacion = usuario.doctor.id_doctor
+        rol = "doctor"
+    elif usuario.asistente:
+        id_especializacion = usuario.asistente.id_asistente
+        rol = "asistente"
+    else:
+        id_especializacion = None
+        rol = "sin_especializacion"
+    # Crear el JWT token con claims adicionales
+    additional_claims = {
+        "id_especializacion": id_especializacion,
+        "rol": rol
+    }
+    access_token = create_access_token(identity=usuario.id_usuario, additional_claims=additional_claims)
+    return jsonify({"access_token": access_token}), 200

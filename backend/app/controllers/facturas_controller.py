@@ -1,29 +1,52 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 from models.factura_model import Factura
+from database import db
 from models.detalle_factura_model import DetalleFactura
 from models.paciente_model import Paciente
 from models.doctor_model import Doctor
+from models.usuario_model import Usuario
 from views.factura_view import render_factura_list, render_factura_detail
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import  get_jwt
 from utils.decorator import roles_required
 from sqlalchemy.orm import joinedload
 
 facturas_bp = Blueprint("facturas", __name__)
 
-# Crear una factura
-@facturas_bp.route("/facturas", methods=["POST"])
-@roles_required("admin", "asistant")
+@facturas_bp.route('/facturas', methods=['POST'])
+@roles_required('admin', 'asistant')
 def create_factura():
     data = request.get_json()
     try:
+        # Validar datos básicos de la factura
+        id_paciente = data.get('id_paciente')
+        fecha_factura = data.get('fecha_factura')
+        monto_total = data.get('monto_total')
+        estado_pago = data.get('estado_pago')
+        detalles = data.get('detalles', [])  # Detalles de factura (array)
+        if not id_paciente or not fecha_factura or not monto_total or not estado_pago:
+            return jsonify({"error": "Faltan campos obligatorios"}), 400
+        # Crear la factura
         nueva_factura = Factura(
-            id_paciente=data["id_paciente"],
-            fecha_factura=data["fecha_factura"],
-            monto_total=data["monto_total"],
-            estado_pago=data["estado_pago"],
+            id_paciente=id_paciente,
+            fecha_factura=fecha_factura,
+            monto_total=monto_total,
+            estado_pago=estado_pago
         )
         nueva_factura.save()
-        return jsonify({"message": "Factura creada exitosamente"}), 201
+        # Crear los detalles de factura si existen
+        if not detalles:
+            return jsonify({"error": "Debe incluir al menos un detalle de factura"}), 400
+        for detalle in detalles:
+            nuevo_detalle = DetalleFactura(
+                id_factura=nueva_factura.id_factura,
+                descripcion_tratamiento=detalle.get('descripcion_tratamiento'),
+                costo=detalle.get('costo'),
+                id_doctor=detalle.get('id_doctor'),
+                fecha_tratamiento=detalle.get('fecha_tratamiento')
+            )
+            nuevo_detalle.save()
+        return jsonify({"message": "Factura y detalles creados exitosamente"}), 201
     except Exception as e:
         return jsonify({"error": f"Error al crear la factura: {str(e)}"}), 400
 # Crear detalle factura
@@ -51,8 +74,8 @@ def get_all_facturas():
     try:
         # Obtener todas las facturas junto con sus detalles
         facturas = Factura.query.options(
-            db.joinedload(Factura.detalles).joinedload(DetalleFactura.doctor).joinedload(Doctor.usuario),
-            db.joinedload(Factura.paciente).joinedload(Paciente.usuario)
+            joinedload(Factura.detalles).joinedload(DetalleFactura.doctor).joinedload(Doctor.usuario),
+            joinedload(Factura.paciente).joinedload(Paciente.usuario)
         ).all()
 
         return jsonify(render_factura_list(facturas)), 200
@@ -61,7 +84,7 @@ def get_all_facturas():
 
 # Obtener detalles de una factura específica
 @facturas_bp.route("/facturas/<int:id_factura>", methods=["GET"])
-@roles_required("admin", "asistant", "usuario")
+@roles_required("admin", "asistant", "paciente")
 def get_factura_details(id_factura):
     try:
         factura = Factura.get_by_id(id_factura)
@@ -135,37 +158,64 @@ def delete_detalle_factura(id_detalle):
     except Exception as e:
         return jsonify({"error": f"Error al eliminar el detalle de factura: {str(e)}"}), 400
 
-# Ver facturas del usuario actual (paciente)
-@facturas_bp.route("/facturas/mis_facturas", methods=["GET"])
-@roles_required("usuario")
+@facturas_bp.route('/facturas/mis_facturas', methods=['GET'])
+@roles_required('paciente')
 def get_my_facturas():
     try:
-        current_user_id = get_jwt_identity()
-        facturas = Factura.query.filter(Factura.id_paciente == current_user_id).all()
+        # Obtener claims del token JWT
+        claims = get_jwt()
+        id_paciente = claims.get("id_especializacion")  # ID del paciente desde el token
+        # Validar que el paciente tiene un ID válido
+        if not id_paciente:
+            return jsonify({"error": "No se encontró información del paciente en el token"}), 400
+        # Consultar facturas del paciente
+        facturas = Factura.query.filter_by(id_paciente=id_paciente).all()
+        if not facturas:
+            return jsonify({"message": "No se encontraron facturas para este usuario"}), 404
+        # Renderizar la lista de facturas
         return jsonify(render_factura_list(facturas)), 200
     except Exception as e:
-        return jsonify({"error": f"Error al obtener las facturas del usuario: {str(e)}"}), 400
+        return jsonify({"error": f"Error al obtener las facturas: {str(e)}"}), 500
 
 # Filtrar facturas
-@facturas_bp.route("/facturas/filtrar", methods=["GET"])
-@roles_required("admin", "asistant")
+@facturas_bp.route('/facturas/filtrar', methods=['GET'])
+@roles_required('admin', 'asistant')
 def filtrar_facturas():
+    nombre_paciente = request.args.get('nombre_paciente')
+    nombre_doctor = request.args.get('nombre_doctor')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
     try:
-        nombre_paciente = request.args.get("nombre_paciente")
-        nombre_doctor = request.args.get("nombre_doctor")
-        fecha = request.args.get("fecha")  # Formato YYYY-MM-DD
+        # Validar formato de fecha si se proporcionan
+        if fecha_inicio:
+            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        if fecha_fin:
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        # Construir la consulta de filtrado
         query = Factura.query
         if nombre_paciente:
-            query = query.join(Factura.paciente).join(Paciente.usuario).filter(
-                Usuario.nombre.ilike(f"%{nombre_paciente}%")
+            query = query.join(Paciente).join(Usuario).filter(
+                Usuario.nombre.ilike(f"%{nombre_paciente}%") | Usuario.apellido.ilike(f"%{nombre_paciente}%")
             )
         if nombre_doctor:
-            query = query.join(Factura.detalles).join(DetalleFactura.doctor).join(Doctor.usuario).filter(
-                Usuario.nombre.ilike(f"%{nombre_doctor}%")
+            query = query.join(DetalleFactura).join(Doctor).join(Usuario).filter(
+                Usuario.nombre.ilike(f"%{nombre_doctor}%") | Usuario.apellido.ilike(f"%{nombre_doctor}%")
             )
-        if fecha:
-            query = query.filter(Factura.fecha_factura.cast(db.Date) == fecha)
+        if fecha_inicio and fecha_fin:
+            # Si ambas fechas están presentes
+            query = query.filter(Factura.fecha_factura.between(fecha_inicio, fecha_fin))
+        elif fecha_inicio:
+            # Si solo se proporciona fecha de inicio
+            query = query.filter(Factura.fecha_factura == fecha_inicio)
+        elif fecha_fin:
+            # Si solo se proporciona fecha de fin
+            query = query.filter(Factura.fecha_factura == fecha_fin)
         facturas = query.all()
+        if not facturas:
+            return jsonify({"message": "No se encontraron facturas con los filtros proporcionados"}), 404
         return jsonify(render_factura_list(facturas)), 200
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido. Use 'YYYY-MM-DD'"}), 400
     except Exception as e:
-        return jsonify({"error": f"Error al filtrar las facturas: {str(e)}"}), 400
+        return jsonify({"error": f"Error al filtrar facturas: {str(e)}"}), 400

@@ -8,7 +8,7 @@ class Cita(db.Model):
     fecha_cita = db.Column(db.Date, nullable=False)
     hora_cita = db.Column(db.Time, nullable=False)
     motivo_cita = db.Column(db.String(255), nullable=False)
-    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor'), nullable=False)
+    id_doctor = db.Column(db.Integer, db.ForeignKey('doctores.id_doctor',ondelete="SET NULL"), nullable=True)
     estado = db.Column(db.String(50), nullable=False)
 
     paciente = db.relationship("Paciente", backref=db.backref("citas", cascade="all, delete-orphan"))

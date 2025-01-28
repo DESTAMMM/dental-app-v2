@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import jsonify
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import verify_jwt_in_request, get_jwt
 
 def roles_required(*required_roles):
     def decorator(fn):
@@ -9,23 +9,27 @@ def roles_required(*required_roles):
             try:
                 # Verificar que el token JWT sea válido
                 verify_jwt_in_request()
-                # Obtener la identidad del usuario desde el token
-                current_user_id = get_jwt_identity()
-                # Importar dinámicamente los modelos para evitar dependencias circulares
-                from models.usuario_model import Usuario
-                # Consultar al usuario desde la base de datos con su rol
-                usuario = Usuario.query.filter_by(id_usuario=current_user_id).join("rol").first()
-                if not usuario:
-                    return jsonify({"error": "Usuario no encontrado"}), 404
-                # Verificar que el rol del usuario está permitido
-                if usuario.rol.nombre_rol not in required_roles:
+                # Obtener claims del token JWT
+                claims = get_jwt()
+                rol = claims.get("rol")
+                id_usuario = claims.get("sub")
+                id_especializacion = claims.get("id_especializacion")
+
+                # Validar que el rol está permitido
+                if rol not in required_roles:
                     return jsonify({"error": "Acceso no autorizado para este rol"}), 403
 
+                # Construir un objeto simplificado para current_user
+                current_user = {
+                    "id_usuario": id_usuario,
+                    "rol": rol,
+                    "id_especializacion": id_especializacion
+                }
                 # Pasar el usuario al controlador como argumento
-                kwargs['current_user'] = usuario
+                kwargs['current_user'] = current_user
                 return fn(*args, **kwargs)
-
             except Exception as e:
+                # Manejar errores de autenticación o JWT
                 return jsonify({"error": f"Error de autenticación: {str(e)}"}), 401
         return wrapper
     return decorator

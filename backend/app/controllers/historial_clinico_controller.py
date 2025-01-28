@@ -4,6 +4,7 @@ from models.paciente_model import Paciente
 from models.usuario_model import Usuario
 from views.historial_clinico_view import render_historial_clinico_list, render_historial_detail
 from utils.decorator import roles_required
+from flask_jwt_extended import get_jwt
 
 historial_bp = Blueprint('historial', __name__)
 
@@ -38,19 +39,20 @@ def create_historial():
 
 @historial_bp.route('/mi_historial', methods=['GET'])
 @roles_required('paciente')  # Solo pacientes pueden acceder
-def get_mi_historial(current_user):
+def get_mi_historial():
     try:
-        # Verificar que el usuario tiene una especialización como paciente
-        paciente = current_user.paciente
-        if not paciente:
-            return jsonify({"error": "No se encontró información del paciente"}), 404
+        # Obtener claims del token JWT
+        claims = get_jwt()
+        id_paciente = claims.get("id_especializacion")  # ID del paciente desde el token
+        # Validar que el ID del paciente esté presente en el token
+        if not id_paciente:
+            return jsonify({"error": "No se encontró información del paciente en el token"}), 400
         # Obtener los historiales médicos asociados al paciente
-        historiales = HistorialClinico.query.filter_by(id_paciente=paciente.id_paciente).all()
+        historiales = HistorialClinico.query.filter_by(id_paciente=id_paciente).all()
         if not historiales:
             return jsonify({"message": "No se encontraron historiales médicos"}), 404
         # Renderizar la lista de historiales médicos
         return jsonify(render_historial_clinico_list(historiales)), 200
-
     except Exception as e:
         return jsonify({"error": f"Error al obtener el historial médico: {str(e)}"}), 500
     

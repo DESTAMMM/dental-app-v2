@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt
 from models.usuario_model import Usuario
 from models.paciente_model import Paciente
 from models.doctor_model import Doctor
@@ -56,13 +57,23 @@ def get_all_citas():
 # Obtener citas del paciente autenticado
 @citas_bp.route('/mis_citas', methods=['GET'])
 @roles_required('paciente')
-def get_mis_citas(current_user):
+def get_mis_citas():
     try:
-        citas = Cita.query.filter_by(id_paciente=current_user.paciente.id_paciente).all()
+        # Obtener claims del token JWT
+        claims = get_jwt()
+        id_paciente = claims.get("id_especializacion")  # ID del paciente desde el token
+        # Validar que el token tenga el ID del paciente
+        if not id_paciente:
+            return jsonify({"error": "No se encontró información del paciente en el token"}), 400
+        # Consultar citas asociadas al paciente
+        citas = Cita.query.filter_by(id_paciente=id_paciente).all()
+        if not citas:
+            return jsonify({"message": "No se encontraron citas para este paciente"}), 404
+        # Renderizar la lista de citas
         return jsonify(render_citas_list(citas)), 200
     except Exception as e:
-        return jsonify({"error": f"Error al obtener tus citas: {str(e)}"}), 400
-
+        return jsonify({"error": f"Error al obtener tus citas: {str(e)}"}), 500
+    
 @citas_bp.route('/citas/filtrar', methods=['GET'])
 @roles_required('admin', 'asistant')
 def filtrar_citas():

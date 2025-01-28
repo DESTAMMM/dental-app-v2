@@ -3,12 +3,12 @@ from database import db
 class Factura(db.Model):
     __tablename__ = "facturas"
     id_factura = db.Column(db.Integer, primary_key=True)
-    id_paciente = db.Column(db.Integer, db.ForeignKey("pacientes.id_paciente"), nullable=False)
+    id_paciente = db.Column(db.Integer, db.ForeignKey("pacientes.id_paciente", ondelete="SET NULL"), nullable=True)
     fecha_factura = db.Column(db.DateTime, nullable=False)
     monto_total = db.Column(db.Float, nullable=False)
     estado_pago = db.Column(db.String(50), nullable=False)
 
-    paciente = db.relationship("Paciente", backref="facturas")
+    paciente = db.relationship("Paciente",backref=db.backref("facturas", passive_deletes=True),)
     detalles = db.relationship("DetalleFactura", backref="factura", cascade="all, delete-orphan")
 
     def __init__(self, id_paciente, fecha_factura, monto_total, estado_pago):
