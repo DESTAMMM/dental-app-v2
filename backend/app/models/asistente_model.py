@@ -10,7 +10,7 @@ class Asistente(db.Model):
     area_especialidad = db.Column(db.String(255), nullable=False)
 
     # Relación con Usuario
-    usuario = db.relationship("Usuario", backref=db.backref("asistente", uselist=False, cascade="all, delete"))
+    usuario = db.relationship("Usuario", back_populates="asistente", cascade="all, delete-orphan",  single_parent=True)
 
     def __init__(self, id_usuario, fecha_contratacion, turno, area_especialidad):
         self.id_usuario = id_usuario

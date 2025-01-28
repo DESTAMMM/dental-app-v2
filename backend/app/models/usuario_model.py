@@ -16,9 +16,9 @@ class Usuario(db.Model):
     # Relación con el rol
     rol = db.relationship("Rol", backref="usuarios")
 
-    paciente = db.relationship("Paciente", backref=db.backref("usuario", cascade="all, delete"), uselist=False, cascade="all, delete-orphan")
-    doctor = db.relationship("Doctor", backref=db.backref("usuario", cascade="all, delete"), uselist=False, cascade="all, delete-orphan")
-    asistente = db.relationship("Asistente", backref=db.backref("usuario", cascade="all, delete"), uselist=False, cascade="all, delete-orphan")
+    paciente = db.relationship("Paciente", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+    doctor = db.relationship("Doctor", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+    asistente = db.relationship("Asistente", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self, nombre_usuario, contrasena, id_rol, nombre, apellido, correo_electronico, telefono):
         self.nombre_usuario = nombre_usuario

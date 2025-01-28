@@ -8,7 +8,7 @@ class Doctor(db.Model):
     especialidad = db.Column(db.String(255), nullable=False)
 
     # Relación con Usuario
-    usuario = db.relationship("Usuario", backref=db.backref("doctor", uselist=False, cascade="all, delete"))
+    usuario = db.relationship("Usuario", back_populates="doctor", cascade="all, delete-orphan",  single_parent=True)
 
     def __init__(self, id_usuario, especialidad):
         self.id_usuario = id_usuario
