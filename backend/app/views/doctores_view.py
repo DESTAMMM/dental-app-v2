@@ -14,8 +14,7 @@ def render_doctor_list(doctores):
                     "nombre_rol": doctor.usuario.rol.nombre_rol
                 }
             },
-            "especialidad": doctor.especialidad,
-            "numero_colegiatura": doctor.numero_colegiatura
+            "especialidad": doctor.especialidad
         }
         for doctor in doctores
     ]
@@ -36,6 +35,5 @@ def render_doctor_detail(doctor):
                 "nombre_rol": doctor.usuario.rol.nombre_rol
             }
         },
-        "especialidad": doctor.especialidad,
-        "numero_colegiatura": doctor.numero_colegiatura
+        "especialidad": doctor.especialidad
     }

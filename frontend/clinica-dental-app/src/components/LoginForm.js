@@ -1,45 +1,42 @@
-
 "use client";
-import React, { useState } from "react";
-import { iniciarSesion } from "../data/database";
+import { useState } from "react";
 
-export default function LoginForm({ onClose }) {
+const LoginForm = ({ onLogin }) => {
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [password, setPassword] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    const usuario = iniciarSesion(nombreUsuario, password);
-    if (usuario) {
-      setMensaje("Inicio de sesión exitoso");
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
-    } else {
-      setMensaje("Usuario o contraseña incorrectos");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const resultado = onLogin(nombreUsuario, contrasena);
+    if (!resultado) {
+      setError("Credenciales incorrectas. Inténtalo de nuevo.");
     }
   };
 
   return (
     <div className="modal">
-      <div className="login-form">
+      <form onSubmit={handleSubmit}>
         <h2>Iniciar Sesión</h2>
+        {error && <p style={{ color: "red" }}>{error}</p>}
         <input
           type="text"
-          placeholder="Nombre de usuario"
+          placeholder="Usuario"
           value={nombreUsuario}
           onChange={(e) => setNombreUsuario(e.target.value)}
+          required
         />
         <input
           type="password"
           placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={contrasena}
+          onChange={(e) => setContrasena(e.target.value)}
+          required
         />
-        <button onClick={handleLogin}>Iniciar Sesión</button>
-        <button onClick={onClose}>Cerrar</button>
-        {mensaje && <p>{mensaje}</p>}
-      </div>
+        <button type="submit">Iniciar Sesión</button>
+      </form>
     </div>
   );
-}
+};
+
+export default LoginForm;
