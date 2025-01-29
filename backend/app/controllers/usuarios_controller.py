@@ -277,12 +277,13 @@ def delete_user():
 @usuarios_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
+    contrasena=data.get('contrasena')
     # Validar datos de entrada
     if not data.get('nombre_usuario') or not data.get('contrasena'):
         return jsonify({"error": "El nombre de usuario y la contraseña son obligatorios"}), 400
     # Buscar usuario en la base de datos
     usuario = Usuario.query.filter_by(nombre_usuario=data['nombre_usuario']).first()
-    if not usuario or not usuario.check_password(data['contrasena']):
+    if not usuario or not usuario.check_password(contrasena):
         return jsonify({"error": "Credenciales inválidas"}), 401
     # Identificar el rol y la especialización
     if usuario.paciente:
